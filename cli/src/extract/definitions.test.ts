@@ -38,6 +38,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 9,
     "exported": false,
     "line": 1,
     "name": "processData",
@@ -73,6 +74,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 13,
     "exported": false,
     "line": 1,
     "name": "Calculator",
@@ -105,6 +107,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 9,
     "exported": false,
     "line": 1,
     "name": "processItems",
@@ -129,6 +132,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 4,
     "exported": true,
     "line": 1,
     "name": "CONFIG",
@@ -153,6 +157,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 4,
     "exported": false,
     "line": 1,
     "name": "User",
@@ -168,6 +173,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": false,
     "line": 1,
     "name": "Status",
@@ -187,6 +193,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 5,
     "exported": false,
     "line": 1,
     "name": "Color",
@@ -221,6 +228,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 8,
     "exported": true,
     "line": 1,
     "name": "fetchData",
@@ -243,6 +251,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
       [
         {
+          "endLine": 8,
           "exported": false,
           "line": 1,
           "name": "loadData",
@@ -282,6 +291,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 11,
     "exported": false,
     "line": 1,
     "name": "BaseProcessor",
@@ -304,6 +314,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
       [
         {
+          "endLine": 8,
           "exported": false,
           "line": 1,
           "name": "identity",
@@ -333,6 +344,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 15,
     "exported": false,
     "line": 1,
     "name": "Container",
@@ -348,18 +360,21 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": true,
     "line": 1,
     "name": "a",
     "type": "const",
   },
   {
+    "endLine": 1,
     "exported": true,
     "line": 1,
     "name": "b",
     "type": "const",
   },
   {
+    "endLine": 1,
     "exported": true,
     "line": 1,
     "name": "c",
@@ -383,6 +398,7 @@ describe('TypeScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 9,
     "exported": true,
     "line": 1,
     "name": "handler",
@@ -410,6 +426,7 @@ class UserService {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 13,
     "exported": false,
     "line": 1,
     "name": "UserService",
@@ -454,24 +471,28 @@ type ID = string | number`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 14,
     "exported": true,
     "line": 7,
     "name": "processData",
     "type": "function",
   },
   {
+    "endLine": 19,
     "exported": false,
     "line": 17,
     "name": "Config",
     "type": "interface",
   },
   {
+    "endLine": 27,
     "exported": true,
     "line": 27,
     "name": "VERSION",
     "type": "const",
   },
   {
+    "endLine": 30,
     "exported": false,
     "line": 30,
     "name": "ID",
@@ -500,6 +521,7 @@ describe('JavaScript', () => {
     expect(defs).toMatchInlineSnapshot(`
       [
         {
+          "endLine": 8,
           "exported": false,
           "line": 1,
           "name": "buildResponse",
@@ -541,6 +563,7 @@ describe('JavaScript', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 19,
     "exported": false,
     "line": 1,
     "name": "EventEmitter",
@@ -596,6 +619,7 @@ describe('Python', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 8,
     "exported": false,
     "line": 1,
     "name": "process_data",
@@ -631,6 +655,7 @@ describe('Python', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 14,
     "exported": false,
     "line": 1,
     "name": "DataProcessor",
@@ -688,6 +713,7 @@ def get_users():
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 10,
     "exported": false,
     "line": 1,
     "name": "AdminUser",
@@ -725,6 +751,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 10,
     "exported": false,
     "line": 1,
     "name": "process_items",
@@ -757,6 +784,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 10,
     "exported": false,
     "line": 1,
     "name": "Config",
@@ -794,6 +822,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 14,
     "exported": false,
     "line": 1,
     "name": "Calculator",
@@ -818,6 +847,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 10,
     "exported": false,
     "line": 1,
     "name": "Processor",
@@ -837,6 +867,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 5,
     "exported": false,
     "line": 1,
     "name": "Status",
@@ -852,6 +883,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": false,
     "line": 1,
     "name": "Result",
@@ -867,6 +899,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": false,
     "line": 1,
     "name": "MAX_SIZE",
@@ -882,6 +915,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": false,
     "line": 1,
     "name": "COUNTER",
@@ -904,6 +938,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
       [
         {
+          "endLine": 8,
           "exported": false,
           "line": 1,
           "name": "public_handler",
@@ -926,6 +961,7 @@ describe('Rust', () => {
     expect(defs).toMatchInlineSnapshot(`
       [
         {
+          "endLine": 8,
           "exported": false,
           "line": 1,
           "name": "fetch_data",
@@ -968,6 +1004,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 10,
     "exported": false,
     "line": 1,
     "name": "processItems",
@@ -998,6 +1035,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
       [
         {
+          "endLine": 8,
           "exported": false,
           "line": 1,
           "name": "Process",
@@ -1016,6 +1054,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 4,
     "exported": false,
     "line": 1,
     "name": "Config",
@@ -1033,6 +1072,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 3,
     "exported": false,
     "line": 1,
     "name": "Reader",
@@ -1048,6 +1088,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": false,
     "line": 1,
     "name": "MaxRetries",
@@ -1063,6 +1104,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": false,
     "line": 1,
     "name": "DefaultTimeout",
@@ -1086,6 +1128,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 9,
     "exported": false,
     "line": 1,
     "name": "ProcessData",
@@ -1109,6 +1152,7 @@ describe('Go', () => {
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 9,
     "exported": false,
     "line": 1,
     "name": "init",
@@ -1164,6 +1208,7 @@ import * as baz from 'qux'`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 9,
     "exported": false,
     "line": 1,
     "name": "outer",
@@ -1186,6 +1231,7 @@ import * as baz from 'qux'`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 8,
     "exported": false,
     "line": 1,
     "name": "eightLines",
@@ -1222,6 +1268,7 @@ import * as baz from 'qux'`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 10,
     "exported": false,
     "line": 1,
     "name": "complexSignature",
@@ -1248,6 +1295,7 @@ import * as baz from 'qux'`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 12,
     "exported": false,
     "line": 1,
     "name": "Singleton",
@@ -1275,6 +1323,7 @@ export * from './other'`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 6,
     "exported": false,
     "line": 1,
     "name": "Repository",
@@ -1292,6 +1341,7 @@ export * from './other'`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 3,
     "exported": false,
     "line": 1,
     "name": "Readonly",
@@ -1307,6 +1357,7 @@ export * from './other'`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 1,
     "exported": false,
     "line": 1,
     "name": "NonNullable",
@@ -1364,6 +1415,7 @@ declare const CONFIG: { url: string }`
     expect(defs).toMatchInlineSnapshot(`
       [
         {
+          "endLine": 8,
           "exported": false,
           "line": 1,
           "name": "计算",
@@ -1394,6 +1446,7 @@ declare const CONFIG: { url: string }`
     expect(defs).toMatchInlineSnapshot(`
 [
   {
+    "endLine": 16,
     "exported": false,
     "line": 1,
     "name": "SecureStorage",

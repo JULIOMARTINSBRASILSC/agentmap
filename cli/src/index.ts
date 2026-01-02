@@ -10,7 +10,12 @@ import type { GenerateOptions, MapNode } from './types.js'
 export type {
   DefEntry,
   Definition,
+  DefinitionDiff,
+  DefinitionStatus,
+  DiffHunk,
+  FileDiffStats,
   FileEntry,
+  FileDiff,
   FileResult,
   GenerateOptions,
   Language,

@@ -5,16 +5,27 @@ import type { Plugin } from '@opencode-ai/plugin'
 import { generateMapYaml } from 'agentmap'
 
 export const AgentMapPlugin: Plugin = async ({ directory }) => {
+  let cachedYaml: string | undefined // already scoped to this directory
+
   return {
     'experimental.chat.system.transform': async (_input, output) => {
-      const yaml = await generateMapYaml({ dir: directory })
-      if (!yaml.trim()) return
+      try {
+        // Skip if already has agentmap tag
+        if (output.system.some((s) => s.includes('<agentmap>'))) return
 
-      output.system.push(`<agentmap>
+        cachedYaml ??= await generateMapYaml({ dir: directory })
+        if (!cachedYaml.trim()) return
+
+        output.system.push(`
+
+<agentmap>
 Tree of the most important files in the repo, showing descriptions and definitions:
 
-${yaml}
+${cachedYaml}
 </agentmap>`)
+      } catch (err) {
+        console.error('[agentmap] Failed to generate map:', err)
+      }
     },
   }
 }

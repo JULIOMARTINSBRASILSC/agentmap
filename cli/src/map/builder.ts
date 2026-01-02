@@ -2,7 +2,7 @@
 // Build the nested map object from file results.
 
 import { basename } from 'path'
-import type { FileEntry, FileResult, MapNode } from '../types.js'
+import type { Definition, FileEntry, FileResult, FileDiffStats, MapNode } from '../types.js'
 
 /**
  * Build a nested map object from file results
@@ -19,13 +19,51 @@ export function buildMap(results: FileResult[], rootName: string): MapNode {
 }
 
 /**
- * Format a definition as a string like "line 13, function, exported"
+ * Format file diff stats as a string like "+15-3" or "+15" or "-3"
  */
-function formatDefinition(def: { line: number; type: string; exported: boolean }): string {
-  const parts = [`line ${def.line}`, def.type]
+function formatFileDiff(diff: FileDiffStats): string {
+  const parts: string[] = []
+  if (diff.added > 0) {
+    parts.push(`+${diff.added}`)
+  }
+  if (diff.deleted > 0) {
+    parts.push(`-${diff.deleted}`)
+  }
+  return parts.join('')
+}
+
+/**
+ * Format a definition as a string like "line 13-25, function, exported, added +12"
+ */
+function formatDefinition(def: Definition): string {
+  // Line range - show single line or range
+  const lineStr = def.line === def.endLine 
+    ? `line ${def.line}` 
+    : `line ${def.line}-${def.endLine}`
+  
+  const parts = [lineStr, def.type]
+  
   if (def.exported) {
     parts.push('exported')
   }
+  
+  // Add diff info if present
+  if (def.diff) {
+    parts.push(def.diff.status)
+    
+    // Format as +N-M or just +N or -M
+    const diffParts: string[] = []
+    if (def.diff.added > 0) {
+      diffParts.push(`+${def.diff.added}`)
+    }
+    if (def.diff.deleted > 0) {
+      diffParts.push(`-${def.diff.deleted}`)
+    }
+    if (diffParts.length > 0) {
+      parts.push(diffParts.join(''))
+    }
+  }
+  
   return parts.join(', ')
 }
 
@@ -45,12 +83,16 @@ function insertFile(root: MapNode, result: FileResult): void {
     current = current[dir] as MapNode
   }
 
-  // Create file entry - description first, then defs
+  // Create file entry - description first, then diff, then defs
   const filename = parts[parts.length - 1]
   const entry: FileEntry = {}
 
   if (result.description) {
     entry.description = result.description
+  }
+
+  if (result.diff) {
+    entry.diff = formatFileDiff(result.diff)
   }
 
   if (result.definitions.length > 0) {

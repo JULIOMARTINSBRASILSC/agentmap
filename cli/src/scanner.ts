@@ -8,8 +8,9 @@ import { readFile } from 'fs/promises'
 import { join, normalize } from 'path'
 import { extractMarker } from './extract/marker.js'
 import { extractDefinitions } from './extract/definitions.js'
+import { getAllDiffData, applyDiffToDefinitions } from './extract/git-status.js'
 import { parseCode, detectLanguage, LANGUAGE_EXTENSIONS } from './parser/index.js'
-import type { FileResult, GenerateOptions } from './types.js'
+import type { FileResult, GenerateOptions, FileDiff, FileDiffStats } from './types.js'
 
 /**
  * Supported file extensions (from LANGUAGE_EXTENSIONS)
@@ -87,7 +88,9 @@ async function getGlobFiles(dir: string): Promise<string[]> {
  */
 export async function scanDirectory(options: GenerateOptions = {}): Promise<FileResult[]> {
   const dir = options.dir ?? process.cwd()
-  const ignorePatterns = options.ignore ?? []
+  // Filter out null/undefined/empty patterns (cac can pass [null] when option not used)
+  const ignorePatterns = (options.ignore ?? []).filter((p): p is string => !!p)
+  const includeDiff = options.diff ?? false
 
   // Get file list - prefer git, fallback to glob
   let files: string[]
@@ -106,14 +109,34 @@ export async function scanDirectory(options: GenerateOptions = {}): Promise<File
     files = files.filter(f => !isIgnored(f))
   }
 
+  // Get git diff data if needed (isolated from main processing)
+  let fileStats: Map<string, FileDiffStats> | null = null
+  let fileDiffs: Map<string, FileDiff> | null = null
+  
+  if (includeDiff && isGitRepo(dir)) {
+    try {
+      const diffData = getAllDiffData(dir)
+      fileStats = diffData.fileStats
+      fileDiffs = diffData.fileDiffs
+    } catch {
+      // Diff failed - continue without diff info
+      fileStats = null
+      fileDiffs = null
+    }
+  }
+
   // Process each file
   const results: FileResult[] = []
 
   for (const relativePath of files) {
     const fullPath = join(dir, relativePath)
+    // Normalize path for lookup (handle Windows backslashes)
+    const normalizedPath = relativePath.replace(/\\/g, '/')
 
     try {
-      const result = await processFile(fullPath, relativePath)
+      const fileDiff = fileDiffs?.get(normalizedPath)
+      const stats = fileStats?.get(normalizedPath)
+      const result = await processFile(fullPath, relativePath, fileDiff, stats)
       if (result) {
         results.push(result)
       }
@@ -131,7 +154,9 @@ export async function scanDirectory(options: GenerateOptions = {}): Promise<File
  */
 async function processFile(
   fullPath: string,
-  relativePath: string
+  relativePath: string,
+  fileDiff?: FileDiff,
+  fileStats?: FileDiffStats
 ): Promise<FileResult | null> {
   // Check for marker first (only reads first 30KB)
   const marker = await extractMarker(fullPath)
@@ -150,11 +175,18 @@ async function processFile(
 
   // Parse and extract definitions
   const tree = await parseCode(code, language)
-  const definitions = extractDefinitions(tree.rootNode, language)
+  let definitions = extractDefinitions(tree.rootNode, language)
+
+  // Apply diff info if available (for definition-level stats)
+  if (fileDiff) {
+    definitions = applyDiffToDefinitions(definitions, fileDiff)
+  }
 
   return {
     relativePath,
     description: marker.description,
     definitions,
+    // Use pre-calculated file stats from --numstat (more reliable)
+    diff: fileStats,
   }
 }
