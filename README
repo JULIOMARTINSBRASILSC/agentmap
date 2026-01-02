@@ -132,7 +132,7 @@ Add the plugin to your `opencode.json`:
 
 ```json
 {
-  "plugin": ["agentmap/opencode"]
+  "plugin": ["@agentmap/opencode"]
 }
 ```
 

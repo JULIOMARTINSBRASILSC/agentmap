@@ -2,7 +2,7 @@
 // OpenCode plugin that injects codebase map into system prompt.
 
 import type { Plugin } from '@opencode-ai/plugin'
-import { generateMapYaml } from '../index.js'
+import { generateMapYaml } from 'agentmap'
 
 export const AgentMapPlugin: Plugin = async ({ directory }) => {
   return {

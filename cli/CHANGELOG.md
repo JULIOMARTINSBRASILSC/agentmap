@@ -2,8 +2,8 @@
 
 ## 0.2.0
 
-- Added OpenCode plugin (`agentmap/opencode`) that injects codebase map into system prompt
-- Plugin uses `experimental.chat.system.transform` hook to inject map wrapped in `<agentmap>` tags
+- Moved to bun workspace monorepo structure
+- OpenCode plugin moved to separate package `@agentmap/opencode`
 
 ## 0.1.2
 
