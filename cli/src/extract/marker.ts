@@ -1,5 +1,6 @@
 // Extract file header comment/docstring using tree-sitter.
 // Detects standard comment styles from existing projects.
+// Automatically skips license headers (Copyright, SPDX, etc.).
 
 import { open } from 'fs/promises'
 import { parseCode, detectLanguage } from '../parser/index.js'
@@ -9,6 +10,30 @@ export { extractMarkdownDescription } from './markdown.js'
 
 const MAX_LINES = 50
 const MAX_DESC_LINES = 25
+
+/**
+ * Patterns that strongly indicate a license/copyright comment.
+ * These are checked against comment text.
+ */
+const LICENSE_PATTERNS = [
+  /\bcopyright\s*(?:\(c\)|©|\d{4})/i,   // "Copyright (c)", "Copyright ©", "Copyright 2024"
+  /\bspdx-license-identifier\s*:/i,     // "SPDX-License-Identifier: MIT"
+  /\ball rights reserved\b/i,           // Common in copyright notices
+  /\blicensed under\b/i,                // "Licensed under the MIT License", "Licensed under Apache 2.0"
+  /\bpermission is hereby granted\b/i,  // MIT license text
+  /\bredistribution and use\b/i,        // BSD license text
+  /\bthis source code is licensed\b/i,  // Meta/Facebook style
+  /\bwithout warranty\b/i,              // Common in license text
+  /\bthe software is provided "as is"\b/i, // MIT license text
+]
+
+/**
+ * Check if comment text looks like a license/copyright header.
+ * Uses patterns specific to actual license text to avoid false positives.
+ */
+function isLicenseComment(text: string): boolean {
+  return LICENSE_PATTERNS.some(pattern => pattern.test(text))
+}
 
 /**
  * Truncate lines to MAX_DESC_LINES, adding indicator if truncated
@@ -122,15 +147,61 @@ function extractHeaderFromAST(root: SyntaxNode, language: Language): string | nu
   if (language === 'python' && first.type === 'expression_statement') {
     const str = first.childForFieldName('expression') ?? first.child(0)
     if (str?.type === 'string') {
-      return extractPythonDocstring(str)
+      const docstring = extractPythonDocstring(str)
+      // Skip if it looks like a license
+      if (docstring && isLicenseComment(docstring)) {
+        // Try to find next comment after this docstring
+        return extractConsecutiveComments(children, startIdx + 1, language)
+      }
+      return docstring
     }
   }
 
-  // Collect consecutive comment nodes at the start
+  // Collect consecutive comment nodes at the start, skipping license comments
   if (isCommentNode(first)) {
-    return extractConsecutiveComments(children, startIdx, language)
+    return extractConsecutiveCommentsSkipLicense(children, startIdx, language)
   }
 
+  return null
+}
+
+/**
+ * Extract consecutive comments, skipping leading license comments
+ */
+function extractConsecutiveCommentsSkipLicense(
+  children: SyntaxNode[],
+  startIdx: number,
+  language: Language
+): string | null {
+  let idx = startIdx
+  
+  while (idx < children.length) {
+    const node = children[idx]
+    
+    // Skip non-comment nodes (might be blank lines, etc.)
+    if (!isCommentNode(node)) {
+      idx++
+      continue
+    }
+    
+    const text = extractCommentText(node, language)
+    if (text === null) {
+      idx++
+      continue
+    }
+    
+    // Check if this comment is a license
+    if (isLicenseComment(text)) {
+      // Skip this license comment
+      idx++
+      // Continue to skip any consecutive license comments
+      continue
+    }
+    
+    // Found a non-license comment - extract from here
+    return extractConsecutiveComments(children, idx, language)
+  }
+  
   return null
 }
 

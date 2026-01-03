@@ -376,6 +376,144 @@ export function App() {}
 })
 
 // ============================================================================
+// License Comments (should be skipped)
+// ============================================================================
+
+describe('License comments', () => {
+  test('Meta/Facebook style license header is skipped', async () => {
+    const desc = await testFile('test.ts', `/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+// This is the actual file description.
+// It describes what the file does.
+
+export function foo() {}
+`)
+    expect(desc).toMatchInlineSnapshot(`
+"This is the actual file description.
+It describes what the file does."
+`)
+  })
+
+  test('MIT license header is skipped', async () => {
+    const desc = await testFile('test.ts', `/**
+ * MIT License
+ *
+ * Copyright (c) 2024 Some Company
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files.
+ */
+
+// File description after license.
+
+export function foo() {}
+`)
+    expect(desc).toMatchInlineSnapshot(`"File description after license."`)
+  })
+
+  test('SPDX license identifier is skipped', async () => {
+    const desc = await testFile('test.ts', `// SPDX-License-Identifier: MIT
+
+// Actual description of the module.
+// More details here.
+
+export function foo() {}
+`)
+    expect(desc).toMatchInlineSnapshot(`
+"Actual description of the module.
+More details here."
+`)
+  })
+
+  test('BSD license is skipped', async () => {
+    const desc = await testFile('test.go', `/*
+ * Copyright 2024 Some Corp. All rights reserved.
+ * Redistribution and use in source and binary forms are permitted.
+ */
+
+// Package main handles the CLI.
+
+package main
+`)
+    expect(desc).toMatchInlineSnapshot(`"Package main handles the CLI."`)
+  })
+
+  test('Python license docstring is skipped', async () => {
+    const desc = await testFile('test.py', `"""
+Copyright (c) 2024 Company Inc.
+All Rights Reserved.
+"""
+
+# This module handles data processing.
+# It provides utilities for ETL workflows.
+
+def process():
+    pass
+`)
+    expect(desc).toMatchInlineSnapshot(`
+"This module handles data processing.
+It provides utilities for ETL workflows."
+`)
+  })
+
+  test('multiple consecutive license comments are skipped', async () => {
+    const desc = await testFile('test.ts', `// Copyright 2024 Company
+// Licensed under Apache 2.0
+
+// This is the real description.
+
+export function foo() {}
+`)
+    expect(desc).toMatchInlineSnapshot(`"This is the real description."`)
+  })
+
+  test('license only file returns undefined', async () => {
+    const desc = await testFile('test.ts', `/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+export function foo() {}
+`)
+    expect(desc).toBeUndefined()
+  })
+
+  test('Rust inner doc license is skipped', async () => {
+    const desc = await testFile('test.rs', `//! Copyright 2024 Rust Foundation
+//! This source code is licensed under MIT.
+
+//! This module provides HTTP utilities.
+//! Use it for making web requests.
+
+fn main() {}
+`)
+    expect(desc).toMatchInlineSnapshot(`
+"This module provides HTTP utilities.
+Use it for making web requests."
+`)
+  })
+
+  test('non-license comment is not skipped', async () => {
+    const desc = await testFile('test.ts', `// This module handles user authentication.
+// It provides login and logout functionality.
+
+export function login() {}
+`)
+    expect(desc).toMatchInlineSnapshot(`
+"This module handles user authentication.
+It provides login and logout functionality."
+`)
+  })
+})
+
+// ============================================================================
 // Edge Cases
 // ============================================================================
 
