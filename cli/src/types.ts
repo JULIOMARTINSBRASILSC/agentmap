@@ -36,6 +36,7 @@ export interface FileEntry {
   description?: string
   diff?: string  // formatted as "+N-M" or "+N" or "-M"
   defs?: DefEntry
+  exports?: DefEntry  // used instead of defs when truncating files with exported symbols
 }
 
 /**

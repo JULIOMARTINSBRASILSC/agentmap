@@ -9,8 +9,16 @@ const MAX_DEFS_PER_FILE = 25
 const MAX_LINES = 1000
 
 /**
+ * Check if a def value indicates exported or extern
+ */
+function isExportedDef(value: string): boolean {
+  return value.includes('exported') || value.includes('extern')
+}
+
+/**
  * Truncate definitions in a file entry to MAX_DEFS_PER_FILE
- * Adds a marker entry if truncated
+ * If file has exported symbols, shows only exports field instead
+ * Otherwise uses current truncation behavior
  */
 function truncateDefs(entry: FileEntry): FileEntry {
   if (!entry.defs) return entry
@@ -18,6 +26,31 @@ function truncateDefs(entry: FileEntry): FileEntry {
   const defNames = Object.keys(entry.defs)
   if (defNames.length <= MAX_DEFS_PER_FILE) return entry
 
+  // Filter to only exported/extern definitions
+  const exportedNames = defNames.filter(name => isExportedDef(entry.defs![name]))
+
+  // If we have exports, use exports field instead of defs
+  if (exportedNames.length > 0) {
+    const exports: DefEntry = {}
+    const maxExports = Math.min(exportedNames.length, MAX_DEFS_PER_FILE)
+    
+    for (let i = 0; i < maxExports; i++) {
+      const name = exportedNames[i]
+      exports[name] = entry.defs[name]
+    }
+
+    // Add marker if exports were also truncated
+    if (exportedNames.length > MAX_DEFS_PER_FILE) {
+      const remaining = exportedNames.length - MAX_DEFS_PER_FILE
+      exports[`__more_${remaining}__`] = `${remaining} more exports`
+    }
+
+    // Return with exports instead of defs
+    const { defs, ...rest } = entry
+    return { ...rest, exports }
+  }
+
+  // No exports found - use current truncation behavior
   const truncated: DefEntry = {}
   for (let i = 0; i < MAX_DEFS_PER_FILE; i++) {
     const name = defNames[i]
@@ -63,11 +96,11 @@ function truncateMap(node: MapNode): MapNode {
  * Convert __more_N__ markers to YAML comments
  */
 function markersToComments(yaml: string): string {
-  // Match lines like: __more_25__: 25 more definitions
-  // Replace with: # ... 25 more definitions
+  // Match lines like: __more_25__: 25 more definitions/exports
+  // Replace with: # ... 25 more definitions/exports
   return yaml.replace(
-    /^(\s*)__more_(\d+)__: .+$/gm,
-    '$1# ... $2 more definitions'
+    /^(\s*)__more_(\d+)__: (\d+ more (?:definitions|exports))$/gm,
+    '$1# ... $3'
   )
 }
 
