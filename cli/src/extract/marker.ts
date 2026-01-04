@@ -122,13 +122,15 @@ function extractHeaderFromAST(root: SyntaxNode, language: Language): string | nu
   }
 
   let startIdx = 0
+  let shebang: string | null = null
 
-  // Skip shebang if present
+  // Capture shebang if present
   // Python/shell: comment node starting with #!
   // JS/TS: hash_bang_line node
   const firstChild = children[0]
   if (firstChild?.type === 'hash_bang_line' || 
       (firstChild?.type === 'comment' && firstChild.text.startsWith('#!'))) {
+    shebang = firstChild.text.trim()
     startIdx = 1
   }
 
@@ -138,10 +140,18 @@ function extractHeaderFromAST(root: SyntaxNode, language: Language): string | nu
   }
 
   if (startIdx >= children.length) {
-    return null
+    // Only shebang, no description
+    return shebang
   }
 
   const first = children[startIdx]
+
+  // Helper to prepend shebang to description
+  const withShebang = (desc: string | null): string | null => {
+    if (!desc) return shebang
+    if (!shebang) return desc
+    return `${shebang}\n${desc}`
+  }
 
   // Python: check for module docstring (expression_statement containing string)
   if (language === 'python' && first.type === 'expression_statement') {
@@ -151,18 +161,18 @@ function extractHeaderFromAST(root: SyntaxNode, language: Language): string | nu
       // Skip if it looks like a license
       if (docstring && isLicenseComment(docstring)) {
         // Try to find next comment after this docstring
-        return extractConsecutiveComments(children, startIdx + 1, language)
+        return withShebang(extractConsecutiveComments(children, startIdx + 1, language))
       }
-      return docstring
+      return withShebang(docstring)
     }
   }
 
   // Collect consecutive comment nodes at the start, skipping license comments
   if (isCommentNode(first)) {
-    return extractConsecutiveCommentsSkipLicense(children, startIdx, language)
+    return withShebang(extractConsecutiveCommentsSkipLicense(children, startIdx, language))
   }
 
-  return null
+  return shebang
 }
 
 /**

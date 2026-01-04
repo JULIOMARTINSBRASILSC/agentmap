@@ -185,7 +185,10 @@ Second line of hash comment."
 def foo():
     pass
 `)
-    expect(desc).toMatchInlineSnapshot(`"Module with shebang."`)
+    expect(desc).toMatchInlineSnapshot(`
+      "#!/usr/bin/env python3
+      Module with shebang."
+    `)
   })
 
   test('.pyi extension works', async () => {
@@ -350,7 +353,8 @@ After directive."
 function main() {}
 `)
     expect(desc).toMatchInlineSnapshot(`
-"CLI tool for processing data.
+"#!/usr/bin/env node
+CLI tool for processing data.
 Handles input and output."
 `)
   })
@@ -361,7 +365,10 @@ Handles input and output."
 
 console.log("hello")
 `)
-    expect(desc).toMatchInlineSnapshot(`"Simple script runner."`)
+    expect(desc).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      Simple script runner."
+    `)
   })
 
   test('shebang + use client + comment', async () => {
@@ -371,7 +378,10 @@ console.log("hello")
 
 export function App() {}
 `)
-    expect(desc).toMatchInlineSnapshot(`"React client app entry."`)
+    expect(desc).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      React client app entry."
+    `)
   })
 })
 
