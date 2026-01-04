@@ -90,6 +90,7 @@ export interface Definition {
   endLine: number  // 1-based end line
   type: DefinitionType
   exported: boolean
+  extern?: boolean  // true for extern declarations (C/C++/Zig)
   diff?: DefinitionDiff  // only present when --diff flag used
 }
 

@@ -949,7 +949,7 @@ describe('Rust', () => {
       [
         {
           "endLine": 8,
-          "exported": false,
+          "exported": true,
           "line": 1,
           "name": "public_handler",
           "type": "function",
@@ -1046,7 +1046,7 @@ describe('Go', () => {
       [
         {
           "endLine": 8,
-          "exported": false,
+          "exported": true,
           "line": 1,
           "name": "Process",
           "type": "function",
@@ -1065,7 +1065,7 @@ describe('Go', () => {
 [
   {
     "endLine": 4,
-    "exported": false,
+    "exported": true,
     "line": 1,
     "name": "Config",
     "type": "type",
@@ -1083,7 +1083,7 @@ describe('Go', () => {
 [
   {
     "endLine": 3,
-    "exported": false,
+    "exported": true,
     "line": 1,
     "name": "Reader",
     "type": "type",
@@ -1099,7 +1099,7 @@ describe('Go', () => {
 [
   {
     "endLine": 1,
-    "exported": false,
+    "exported": true,
     "line": 1,
     "name": "MaxRetries",
     "type": "const",
@@ -1115,7 +1115,7 @@ describe('Go', () => {
 [
   {
     "endLine": 1,
-    "exported": false,
+    "exported": true,
     "line": 1,
     "name": "DefaultTimeout",
     "type": "const",
@@ -1139,7 +1139,7 @@ describe('Go', () => {
 [
   {
     "endLine": 9,
-    "exported": false,
+    "exported": true,
     "line": 1,
     "name": "ProcessData",
     "type": "function",
@@ -1652,5 +1652,618 @@ describe('Zig', () => {
 }`
     const defs = await getDefinitions(code, 'zig')
     expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('comptime function', async () => {
+    const code = `pub fn comptimeFunc(comptime T: type) type {
+    return struct {
+        value: T,
+        count: usize,
+        flag: bool,
+    };
+}`
+    const defs = await getDefinitions(code, 'zig')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": true,
+          "line": 1,
+          "name": "comptimeFunc",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('extern function', async () => {
+    const code = `pub extern "c" fn printf(format: [*:0]const u8, ...) c_int;`
+    const defs = await getDefinitions(code, 'zig')
+    expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('error set', async () => {
+    const code = `pub const FileError = error{
+    NotFound,
+    AccessDenied,
+    OutOfMemory,
+    InvalidPath,
+};`
+    const defs = await getDefinitions(code, 'zig')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 6,
+          "exported": true,
+          "line": 1,
+          "name": "FileError",
+          "type": "const",
+        },
+      ]
+    `)
+  })
+
+  test('packed struct', async () => {
+    const code = `pub const PackedData = packed struct {
+    flags: u4,
+    count: u4,
+    value: u8,
+    extra: u16,
+};`
+    const defs = await getDefinitions(code, 'zig')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 6,
+          "exported": true,
+          "line": 1,
+          "name": "PackedData",
+          "type": "struct",
+        },
+      ]
+    `)
+  })
+
+  test('multiple definitions in file', async () => {
+    const code = `pub const MAX_SIZE: usize = 1024;
+pub const Config = struct {
+    name: []const u8,
+    value: i32,
+};
+pub fn process(cfg: Config) void {
+    const x = cfg.value;
+    const y = x * 2;
+    const z = y + 1;
+    _ = z;
+    return;
+}`
+    const defs = await getDefinitions(code, 'zig')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 1,
+          "exported": true,
+          "line": 1,
+          "name": "MAX_SIZE",
+          "type": "const",
+        },
+        {
+          "endLine": 5,
+          "exported": true,
+          "line": 2,
+          "name": "Config",
+          "type": "struct",
+        },
+        {
+          "endLine": 12,
+          "exported": true,
+          "line": 6,
+          "name": "process",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('extern function has extern flag', async () => {
+    const code = `pub extern "c" fn processData(data: [*]u8, len: usize) callconv(.C) void {
+    var i: usize = 0;
+    while (i < len) : (i += 1) {
+        data[i] = 0;
+    }
+    return;
+}`
+    const defs = await getDefinitions(code, 'zig')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": true,
+          "extern": true,
+          "line": 1,
+          "name": "processData",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('non-extern function has no extern flag', async () => {
+    const code = `pub fn normalFunction(x: i32) i32 {
+    const a = x * 2;
+    const b = a + 1;
+    const c = b - 3;
+    const d = c * 4;
+    return d;
+}`
+    const defs = await getDefinitions(code, 'zig')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": true,
+          "line": 1,
+          "name": "normalFunction",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+})
+
+// C/C++ Tests
+// ============================================================================
+
+describe('C++', () => {
+  test('large function', async () => {
+    const code = `int calculateSum(int arr[], int size) {
+    int sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += arr[i];
+    }
+    return sum;
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": false,
+          "line": 1,
+          "name": "calculateSum",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('small function excluded', async () => {
+    const code = `int add(int a, int b) {
+    return a + b;
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('class definition', async () => {
+    const code = `class Calculator {
+public:
+    int add(int a, int b) {
+        return a + b;
+    }
+private:
+    int result;
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 8,
+          "exported": false,
+          "line": 1,
+          "name": "Calculator",
+          "type": "class",
+        },
+      ]
+    `)
+  })
+
+  test('struct definition', async () => {
+    const code = `struct Point {
+    int x;
+    int y;
+    int z;
+    int w;
+    int v;
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": false,
+          "line": 1,
+          "name": "Point",
+          "type": "struct",
+        },
+      ]
+    `)
+  })
+
+  test('enum definition', async () => {
+    const code = `enum Color {
+    RED,
+    GREEN,
+    BLUE,
+    ALPHA
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 6,
+          "exported": false,
+          "line": 1,
+          "name": "Color",
+          "type": "enum",
+        },
+      ]
+    `)
+  })
+
+  test('enum class (C++11)', async () => {
+    const code = `enum class Status {
+    Pending,
+    Running,
+    Complete,
+    Failed
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 6,
+          "exported": false,
+          "line": 1,
+          "name": "Status",
+          "type": "enum",
+        },
+      ]
+    `)
+  })
+
+  test('typedef', async () => {
+    const code = `typedef unsigned long ulong;`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 1,
+          "exported": false,
+          "line": 1,
+          "name": "ulong",
+          "type": "type",
+        },
+      ]
+    `)
+  })
+
+  test('using alias (C++11)', async () => {
+    const code = `using StringList = std::vector<std::string>;`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 1,
+          "exported": false,
+          "line": 1,
+          "name": "StringList",
+          "type": "type",
+        },
+      ]
+    `)
+  })
+
+  test('template function', async () => {
+    const code = `template<typename T>
+T maximum(T a, T b) {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('template class', async () => {
+    const code = `template<typename T>
+class Container {
+public:
+    T value;
+    void set(T v) { value = v; }
+    T get() { return value; }
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('namespace function', async () => {
+    const code = `namespace utils {
+    int helper(int x) {
+        int a = x * 2;
+        int b = a + 1;
+        int c = b - 3;
+        return c;
+    }
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('static function', async () => {
+    const code = `static int internalFunc(int x) {
+    int result = x;
+    result *= 2;
+    result += 10;
+    result -= 5;
+    return result;
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": false,
+          "line": 1,
+          "name": "internalFunc",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('const global', async () => {
+    const code = `const int MAX_SIZE = 1024;`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 1,
+          "exported": false,
+          "line": 1,
+          "name": "MAX_SIZE",
+          "type": "const",
+        },
+      ]
+    `)
+  })
+
+  test('multiple definitions', async () => {
+    const code = `struct Point {
+    int x;
+    int y;
+    int z;
+    int w;
+};
+
+enum Color { RED, GREEN, BLUE };
+
+int distance(Point a, Point b) {
+    int dx = a.x - b.x;
+    int dy = a.y - b.y;
+    int dz = a.z - b.z;
+    return dx + dy + dz;
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 6,
+          "exported": false,
+          "line": 1,
+          "name": "Point",
+          "type": "struct",
+        },
+        {
+          "endLine": 8,
+          "exported": false,
+          "line": 8,
+          "name": "Color",
+          "type": "enum",
+        },
+        {
+          "endLine": 15,
+          "exported": false,
+          "line": 10,
+          "name": "distance",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('forward declaration ignored', async () => {
+    const code = `class ForwardDeclared;
+struct AnotherForward;`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('function with pointer return', async () => {
+    const code = `int* createArray(int size) {
+    int* arr = new int[size];
+    for (int i = 0; i < size; i++) {
+        arr[i] = 0;
+    }
+    return arr;
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": false,
+          "line": 1,
+          "name": "createArray",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('virtual method in class', async () => {
+    const code = `class Base {
+public:
+    virtual void process() {
+        int x = 1;
+        int y = 2;
+        int z = x + y;
+    }
+    virtual ~Base() {}
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 9,
+          "exported": false,
+          "line": 1,
+          "name": "Base",
+          "type": "class",
+        },
+      ]
+    `)
+  })
+
+  test('C-style header declarations', async () => {
+    const code = `#ifndef HEADER_H
+#define HEADER_H
+
+typedef struct {
+    int x;
+    int y;
+    int z;
+    int w;
+} Point;
+
+int add(int a, int b);
+void process(Point* p);
+
+#endif`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('lambda not captured as function', async () => {
+    const code = `auto lambda = [](int x) {
+    return x * 2;
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 3,
+          "exported": false,
+          "line": 1,
+          "name": "lambda",
+          "type": "const",
+        },
+      ]
+    `)
+  })
+
+  test('constructor and destructor', async () => {
+    const code = `class Resource {
+public:
+    Resource() {
+        data = new int[100];
+        size = 100;
+        count = 0;
+    }
+    ~Resource() {
+        delete[] data;
+        data = nullptr;
+        size = 0;
+    }
+private:
+    int* data;
+    int size;
+    int count;
+};`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 17,
+          "exported": false,
+          "line": 1,
+          "name": "Resource",
+          "type": "class",
+        },
+      ]
+    `)
+  })
+
+  test('extern "C" function has extern flag', async () => {
+    const code = `extern "C" void c_callback(int code) {
+    int result = code;
+    result *= 2;
+    result += 10;
+    result -= 5;
+    printf("%d", result);
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 7,
+          "exported": false,
+          "extern": true,
+          "line": 1,
+          "name": "c_callback",
+          "type": "function",
+        },
+      ]
+    `)
+  })
+
+  test('extern variable has extern flag', async () => {
+    const code = `extern int global_counter;`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 1,
+          "exported": false,
+          "extern": true,
+          "line": 1,
+          "name": "global_counter",
+          "type": "const",
+        },
+      ]
+    `)
+  })
+
+  test('non-extern function has no extern flag', async () => {
+    const code = `void regularFunc(int x) {
+    int a = x * 2;
+    int b = a + 1;
+    int c = b - 3;
+    printf("%d", c);
+}`
+    const defs = await getDefinitions(code, 'cpp')
+    expect(defs).toMatchInlineSnapshot(`
+      [
+        {
+          "endLine": 6,
+          "exported": false,
+          "line": 1,
+          "name": "regularFunc",
+          "type": "function",
+        },
+      ]
+    `)
   })
 })

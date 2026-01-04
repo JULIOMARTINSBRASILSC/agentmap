@@ -32,7 +32,7 @@ function formatFileDiff(diff: FileDiffStats): string {
 }
 
 /**
- * Format a definition as a string like "line 13, function, exported, updated (+5-2)"
+ * Format a definition as a string like "line 13, function, exported, extern, updated (+5-2)"
  */
 function formatDefinition(def: Definition): string {
   const lineStr = `line ${def.line}`
@@ -41,6 +41,10 @@ function formatDefinition(def: Definition): string {
   
   if (def.exported) {
     parts.push('exported')
+  }
+  
+  if (def.extern) {
+    parts.push('extern')
   }
   
   // Add diff info if present

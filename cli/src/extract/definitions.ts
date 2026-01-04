@@ -164,6 +164,72 @@ function getZigTypeDeclaration(node: SyntaxNode): DefinitionType | null {
 }
 
 /**
+ * Check if a Zig function_declaration has 'extern' modifier
+ * e.g., pub extern "c" fn printf(...)
+ */
+function isZigExtern(node: SyntaxNode): boolean {
+  for (let i = 0; i < node.childCount; i++) {
+    const child = node.child(i)
+    if (child?.type === 'extern') return true
+    // Stop after we hit the function body or signature
+    if (child?.type === 'block' || child?.type === 'fn') break
+  }
+  return false
+}
+
+/**
+ * Check if a Rust node has 'pub' visibility modifier
+ * e.g., pub fn foo(), pub struct Bar, pub const X: i32
+ */
+function isRustPub(node: SyntaxNode): boolean {
+  for (let i = 0; i < node.childCount; i++) {
+    const child = node.child(i)
+    if (child?.type === 'visibility_modifier') {
+      // Check if it contains 'pub' (could be pub, pub(crate), pub(super), etc.)
+      return child.text.startsWith('pub')
+    }
+    // Stop after we hit the actual declaration content
+    if (child?.type === 'identifier' || child?.type === 'type_identifier') break
+  }
+  return false
+}
+
+/**
+ * Check if a Go identifier is exported (starts with uppercase letter)
+ * In Go, any identifier starting with uppercase is public/exported
+ */
+function isGoExported(name: string | null): boolean {
+  if (!name || name.length === 0) return false
+  const firstChar = name.charAt(0)
+  return firstChar >= 'A' && firstChar <= 'Z'
+}
+
+/**
+ * Check if a C++ node is wrapped in extern "C" or has extern storage class
+ * Returns true for:
+ *   - extern "C" void foo();
+ *   - extern int global_var;
+ */
+function isCppExtern(node: SyntaxNode, originalNode: SyntaxNode): boolean {
+  // Check if wrapped in linkage_specification (extern "C" { ... })
+  if (originalNode.type === 'linkage_specification') {
+    return true
+  }
+  
+  // Check for extern storage class specifier on declarations
+  if (node.type === 'declaration' || node.type === 'function_definition') {
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i)
+      if (child?.type === 'storage_class_specifier' && child.text === 'extern') {
+        return true
+      }
+    }
+  }
+  
+  return false
+}
+
+/**
  * Extract top-level definitions from a syntax tree
  */
 export function extractDefinitions(
@@ -178,19 +244,62 @@ export function extractDefinitions(
     const node = rootNode.child(i)
     if (!node) continue
 
-    // For Zig, check for 'pub' modifier directly on the node
-    const exported = language === 'zig' ? isZigPub(node) : isExported(node)
-    const actualNode = language === 'zig' ? node : unwrapExport(node)
+    // Determine export status based on language
+    // - Zig/Rust: check for 'pub' modifier
+    // - Go: determined later based on identifier capitalization
+    // - TS/JS: check for export_statement wrapper
+    let exported: boolean | null = null  // null means "determine from name" (Go)
+    let actualNode: SyntaxNode = node
+    
+    if (language === 'zig') {
+      exported = isZigPub(node)
+      actualNode = node
+    } else if (language === 'rust') {
+      exported = isRustPub(node)
+      actualNode = node
+    } else if (language === 'go') {
+      exported = null  // will be determined from name capitalization
+      actualNode = node
+    } else {
+      exported = isExported(node)
+      actualNode = unwrapExport(node)
+    }
+    
+    // Check for extern modifier
+    let isExtern = false
+    if (language === 'zig') {
+      isExtern = isZigExtern(node)
+    } else if (language === 'cpp') {
+      // Handle linkage_specification (extern "C" { ... })
+      if (node.type === 'linkage_specification') {
+        isExtern = true
+        // Extract definitions from inside the linkage_specification
+        for (let j = 0; j < node.childCount; j++) {
+          const inner = node.child(j)
+          if (!inner) continue
+          // Skip the extern keyword and string literal
+          if (inner.type === 'extern' || inner.type === 'string_literal') continue
+          
+          const def = extractDefinition(inner, language, exported, true)
+          if (def && !seenNames.has(def.name)) {
+            definitions.push(def)
+            seenNames.add(def.name)
+          }
+        }
+        continue
+      }
+      isExtern = isCppExtern(actualNode, node)
+    }
     
     // Try to extract definition
-    const def = extractDefinition(actualNode, language, exported)
+    const def = extractDefinition(actualNode, language, exported, isExtern)
     if (def && !seenNames.has(def.name)) {
       definitions.push(def)
       seenNames.add(def.name)
     }
 
     // Handle multiple declarations in one statement (e.g., const a = 1, b = 2)
-    const extraDefs = extractMultipleDeclarations(actualNode, language, exported)
+    const extraDefs = extractMultipleDeclarations(actualNode, language, exported, isExtern)
     for (const d of extraDefs) {
       if (!seenNames.has(d.name)) {
         definitions.push(d)
@@ -204,11 +313,13 @@ export function extractDefinitions(
 
 /**
  * Extract a single definition from a node
+ * @param exported - true/false for explicit export status, null means determine from name (Go)
  */
 function extractDefinition(
   node: SyntaxNode,
   language: Language,
-  exported: boolean
+  exported: boolean | null,
+  isExtern: boolean = false
 ): Definition | null {
   const functionTypes = FUNCTION_TYPES[language]
   const classTypes = CLASS_TYPES[language]
@@ -216,6 +327,13 @@ function extractDefinition(
   const typeTypes = TYPE_TYPES[language]
   const enumTypes = ENUM_TYPES[language]
   const constTypes = CONST_TYPES[language]
+  
+  // Helper to resolve export status (handles Go's name-based exports)
+  const resolveExported = (name: string | null): boolean => {
+    if (exported !== null) return exported
+    // For Go: uppercase first letter = exported
+    return isGoExported(name)
+  }
 
   // Functions
   if (functionTypes.includes(node.type)) {
@@ -226,7 +344,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'function', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -240,7 +359,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'class', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -255,7 +375,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'struct', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -270,7 +391,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'trait', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -284,7 +406,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'interface', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -298,7 +421,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'type', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -312,7 +436,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'enum', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -321,6 +446,7 @@ function extractDefinition(
   if (constTypes.includes(node.type)) {
     // For Zig, check for struct/enum/union declarations
     if (language === 'zig') {
+      // exported is always boolean for Zig (set via isZigPub)
       if (!exported || !isZigConst(node)) {
         return null
       }
@@ -334,12 +460,13 @@ function extractDefinition(
             line: node.startPosition.row + 1,
             endLine: node.endPosition.row + 1,
             type: zigType,
-            exported
+            exported: true,  // already checked above
+            ...(isExtern ? { extern: true } : {})
           }
         }
       }
     }
-    // For TS/JS, only include if exported
+    // For TS/JS, only include if exported (exported is always boolean for TS/JS)
     if ((language === 'typescript' || language === 'javascript') && !exported) {
       // Check for arrow functions assigned to const (these are always included if large enough)
       const arrowFn = extractArrowFunction(node)
@@ -363,7 +490,7 @@ function extractDefinition(
         line: arrowFn.line, 
         endLine: arrowFn.endLine,
         type: 'function', 
-        exported 
+        exported: resolveExported(arrowFn.name)
       }
     }
     
@@ -375,7 +502,8 @@ function extractDefinition(
         line: node.startPosition.row + 1, 
         endLine: node.endPosition.row + 1,
         type: 'const', 
-        exported 
+        exported: resolveExported(name),
+        ...(isExtern ? { extern: true } : {})
       }
     }
   }
@@ -389,12 +517,20 @@ function extractDefinition(
 function extractMultipleDeclarations(
   node: SyntaxNode,
   language: Language,
-  exported: boolean
+  exported: boolean | null,
+  isExtern: boolean = false
 ): Definition[] {
   const defs: Definition[] = []
+  
+  // Helper to resolve export status (handles Go's name-based exports)
+  const resolveExported = (name: string | null): boolean => {
+    if (exported !== null) return exported
+    return isGoExported(name)
+  }
 
   // Handle lexical_declaration with multiple variable_declarators
   if (node.type === 'lexical_declaration') {
+    // For TS/JS, exported is always boolean
     if ((language === 'typescript' || language === 'javascript') && !exported) {
       return defs
     }
@@ -419,7 +555,8 @@ function extractMultipleDeclarations(
               line: child.startPosition.row + 1,
               endLine: child.endPosition.row + 1,
               type,
-              exported,
+              exported: resolveExported(nameNode.text),
+              ...(isExtern ? { extern: true } : {})
             })
           }
         }
