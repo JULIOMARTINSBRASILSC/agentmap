@@ -209,6 +209,24 @@ my-project:
 
 This gives the AI agent immediate context about your codebase structure without needing to explore files first.
 
+**Manual Setup (Any Agent)**
+
+If you're not using OpenCode, you can still use agentmap by adding instructions to your agent's instruction file (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, etc.):
+
+```markdown
+## Codebase Structure
+
+At the start of each session, run `npx -y agentmap@latest` to see a structured overview of the codebase at this point in time, with file descriptions and definition locations.
+
+When creating new files, add a brief description comment at the top explaining the file's purpose. This makes the file discoverable in the agentmap.
+
+When making significant changes to a file's purpose or responsibilities, update its header comment to reflect the changes.
+
+You can run agentmap again anytime to see the current state of the codebase as it evolves during the session.
+```
+
+This gives the agent the same workflow as the OpenCode plugin - checking codebase structure at session start and keeping file descriptions up to date.
+
 **License**
 
 MIT
