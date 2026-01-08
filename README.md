@@ -27,6 +27,8 @@ my-project:
           GenerateOptions: line 111, interface, exported
 ```
 
+> **Note:** Descriptions are extracted from header comments or docstrings at the top of each file. Files without a header comment are not included in the map. See [File Detection](#file-detection) below for examples.
+
 The map contains:
 - **File tree structure** - nested directories and files
 - **Descriptions** - extracted from header comments/docstrings in each file
@@ -66,7 +68,9 @@ The plugin will scan your project for files with header comments and inject the 
 
 **Quick Setup**
 
-The fastest way to get started is to let an AI agent add file descriptions for you:
+The `agentmap prompt` command generates instructions for an AI agent to add header comments to your most important files. This bootstraps your codebase so agentmap can discover and describe files automatically.
+
+Why add descriptions? Without them, agents must read files to understand what they do. With descriptions in the map, agents can navigate your codebase structure instantly and jump directly to relevant code.
 
 ```bash
 opencode -p "$(npx -y agentmap prompt)"
