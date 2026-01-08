@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+
+- Add `--filter` flag to filter files by glob patterns (can be repeated)
+- Git diff info now always included (removed `--diff` flag)
+- Fix file reading errors - skip unreadable files silently instead of crashing
+
 ## 0.6.0
 
 - Add Zig language support with struct, union, enum, and extern detection

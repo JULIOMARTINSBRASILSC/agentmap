@@ -70,6 +70,7 @@ export async function scanDirectory(options: GenerateOptions = {}): Promise<File
   const dir = options.dir ?? process.cwd()
   // Filter out null/undefined/empty patterns (cac can pass [null] when option not used)
   const ignorePatterns = (options.ignore ?? []).filter((p): p is string => !!p)
+  const filterPatterns = (options.filter ?? []).filter((p): p is string => !!p)
   const includeDiff = options.diff ?? false
 
   // Get file list from git (caller should ensure we're in a git repo)
@@ -77,6 +78,12 @@ export async function scanDirectory(options: GenerateOptions = {}): Promise<File
 
   // Filter by supported extensions or README files
   files = files.filter(f => isSupportedFile(f) || isReadmeFile(f))
+
+  // Filter by filter patterns (only include matching files)
+  if (filterPatterns.length > 0) {
+    const isIncluded = picomatch(filterPatterns)
+    files = files.filter(f => isIncluded(f))
+  }
 
   // Filter by ignore patterns
   if (ignorePatterns.length > 0) {

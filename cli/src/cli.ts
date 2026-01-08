@@ -24,15 +24,16 @@ cli
   .command('[dir]', 'Generate a YAML map of the codebase')
   .option('-o, --output <file>', 'Write output to file (default: stdout)')
   .option('-i, --ignore <pattern>', 'Ignore pattern (can be repeated)', { type: [] })
-  .option('-d, --diff', 'Include git diff status for definitions (added/updated, +N-M)')
-  .action(async (dir: string | undefined, options: { output?: string; ignore?: string[]; diff?: boolean }) => {
+  .option('-f, --filter <pattern>', 'Filter pattern - only include matching files (can be repeated)', { type: [] })
+  .action(async (dir: string | undefined, options: { output?: string; ignore?: string[]; filter?: string[] }) => {
     const targetDir = resolve(dir ?? '.')
 
     try {
       const map = await generateMap({
         dir: targetDir,
         ignore: options.ignore,
-        diff: options.diff,
+        filter: options.filter,
+        diff: true,
       })
 
       // Check if map is empty (only has root key with empty object)
@@ -46,7 +47,8 @@ cli
       const yaml = await generateMapYaml({
         dir: targetDir,
         ignore: options.ignore,
-        diff: options.diff,
+        filter: options.filter,
+        diff: true,
       })
 
       if (options.output) {

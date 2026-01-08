@@ -8,9 +8,16 @@ const MAX_DESC_LINES = 25
 
 /**
  * Read the first N lines of a file
+ * Returns null if file cannot be read (ENOENT, permission denied, etc.)
  */
-async function readFirstLines(filepath: string, maxLines: number): Promise<string> {
-  const handle = await open(filepath, 'r')
+async function readFirstLines(filepath: string, maxLines: number): Promise<string | null> {
+  let handle
+  try {
+    handle = await open(filepath, 'r')
+  } catch {
+    // File doesn't exist or can't be opened - skip silently
+    return null
+  }
   try {
     const buffer = Buffer.alloc(maxLines * 200)
     const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0)
@@ -187,6 +194,10 @@ function extractTextFromTokens(tokens: Token[]): string[] {
  */
 export async function extractMarkdownDescription(filepath: string): Promise<string | null> {
   const head = await readFirstLines(filepath, MAX_LINES)
+  if (head === null) {
+    // File couldn't be read - skip silently
+    return null
+  }
   
   try {
     // Parse markdown to tokens using marked lexer

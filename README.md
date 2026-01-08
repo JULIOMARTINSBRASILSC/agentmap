@@ -98,6 +98,9 @@ npx agentmap ./src
 # Write to file
 npx agentmap -o map.yaml
 
+# Filter to specific directories or files
+npx agentmap --filter "src/**" --filter "lib/**"
+
 # Ignore patterns
 npx agentmap --ignore "dist/**" --ignore "**/test/**"
 ```
@@ -105,11 +108,11 @@ npx agentmap --ignore "dist/**" --ignore "**/test/**"
 **Options**
 
 ```
--o, --output <file>     Write output to file (default: stdout)
--i, --ignore <pattern>  Ignore pattern (can be repeated)
--d, --diff              Include git diff status for definitions
--h, --help              Show help
--v, --version           Show version
+-o, --output <file>      Write output to file (default: stdout)
+-f, --filter <pattern>   Filter pattern - only include matching files (can be repeated)
+-i, --ignore <pattern>   Ignore pattern (can be repeated)
+-h, --help               Show help
+-v, --version            Show version
 ```
 
 **Commands**
@@ -200,6 +203,12 @@ const map = await generateMap({ dir: './src' })
 
 // Get as YAML string
 const yaml = await generateMapYaml({ dir: './src' })
+
+// With filter patterns (only include matching files)
+const yaml = await generateMapYaml({
+  dir: './src',
+  filter: ['src/**', 'lib/**']
+})
 
 // With ignore patterns
 const yaml = await generateMapYaml({

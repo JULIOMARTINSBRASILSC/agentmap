@@ -113,6 +113,8 @@ export interface GenerateOptions {
   dir?: string
   /** Glob patterns to ignore */
   ignore?: string[]
+  /** Glob patterns to filter - only include matching files */
+  filter?: string[]
   /** Include git diff status for definitions */
   diff?: boolean
   /** Git ref to diff against (default: HEAD for unstaged, --cached for staged) */

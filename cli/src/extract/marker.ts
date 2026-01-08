@@ -54,9 +54,16 @@ function truncateDescription(lines: string[]): string {
 
 /**
  * Read the first N lines of a file
+ * Returns null if file cannot be read (ENOENT, permission denied, etc.)
  */
-async function readFirstLines(filepath: string, maxLines: number): Promise<string> {
-  const handle = await open(filepath, 'r')
+async function readFirstLines(filepath: string, maxLines: number): Promise<string | null> {
+  let handle
+  try {
+    handle = await open(filepath, 'r')
+  } catch {
+    // File doesn't exist or can't be opened - skip silently
+    return null
+  }
   try {
     // Read enough bytes for ~50 lines (generous estimate)
     const buffer = Buffer.alloc(maxLines * 200)
@@ -87,6 +94,10 @@ export async function extractMarker(filepath: string): Promise<MarkerResult> {
   }
 
   const head = await readFirstLines(filepath, MAX_LINES)
+  if (head === null) {
+    // File couldn't be read - skip silently
+    return { found: false }
+  }
   const tree = await parseCode(head, language)
   const description = extractHeaderFromAST(tree.rootNode, language)
 

@@ -134,7 +134,7 @@ export const AgentMapPlugin: Plugin = async ({ directory }) => {
         if (output.system.some((s) => s.includes('<agentmap>'))) return
 
         if (!cachedYaml) {
-          const map = await generateMap({ dir: directory })
+          const map = await generateMap({ dir: directory, diff: true })
 
           // Check if map is empty
           const rootKey = Object.keys(map)[0]

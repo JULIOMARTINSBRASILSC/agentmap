@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0
+
+- Include git diff info in generated map by default
+- Update to use agentmap 0.7.0
+
 ## 0.3.0
 
 - Show only exported symbols when truncating files with many definitions
