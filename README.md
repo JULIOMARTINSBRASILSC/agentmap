@@ -27,7 +27,8 @@ my-project:
           GenerateOptions: line 111, interface, exported
 ```
 
-> **Note:** Descriptions are extracted from header comments or docstrings at the top of each file. Files without a header comment are not included in the map. See [File Detection](#file-detection) below for examples.
+> [!NOTE]
+> Descriptions are extracted from header comments or docstrings at the top of each file. Files without a header comment are not included in the map. See [File Detection](#file-detection) below for examples.
 
 The map contains:
 - **File tree structure** - nested directories and files
