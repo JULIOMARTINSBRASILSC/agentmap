@@ -7,11 +7,68 @@ A compact, YAML-based inventory of your codebase, intended to be prepended to a 
 - Give the agent a fast, structured overview of files and responsibilities
 - Provide jump targets via top-level `defs` (functions/classes with line numbers)
 
+**Example Output**
+
+```yaml
+my-project:
+  src:
+    cli.ts:
+      description: CLI entrypoint for generating codebase maps.
+    lib:
+      parser.ts:
+        description: Tree-sitter parser initialization and code parsing.
+        defs:
+          parseCode: line 32, function, exported
+          resetParser: line 45, function, exported
+      types.ts:
+        description: Core type definitions for the codebase map.
+        defs:
+          FileResult: line 101, interface, exported
+          GenerateOptions: line 111, interface, exported
+```
+
+The map contains:
+- **File tree structure** - nested directories and files
+- **Descriptions** - extracted from header comments/docstrings in each file
+- **Definitions** - top-level functions, classes, interfaces, types with line numbers and export status
+
 **Installation**
 
 ```bash
 npm install agentmap
 ```
+
+**Setup with AGENTS.md (Any Agent)**
+
+Add instructions to your agent's instruction file (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, etc.):
+
+```markdown
+## Codebase Structure
+
+At the start of each session, run `npx -y agentmap@latest` to see a structured overview of the codebase at this point in time, with file descriptions and definition locations.
+
+When creating new files, add a brief description comment at the top explaining the file's purpose. This makes the file discoverable in the agentmap.
+
+When making significant changes to a file's purpose or responsibilities, update its header comment to reflect the changes.
+
+You can run agentmap again anytime to see the current state of the codebase as it evolves during the session.
+```
+
+This gives the agent a workflow for checking codebase structure at session start and keeping file descriptions up to date.
+
+**OpenCode Plugin**
+
+agentmap includes a plugin for [OpenCode](https://opencode.ai) that automatically injects the codebase map into the system prompt at session start.
+
+Add the plugin to your `opencode.json`:
+
+```json
+{
+  "plugin": ["@agentmap/opencode"]
+}
+```
+
+The plugin will scan your project for files with header comments and inject the map into the system prompt wrapped in `<agentmap>` tags. This gives the AI agent immediate context about your codebase structure without needing to explore files first.
 
 **Quick Setup**
 
@@ -26,7 +83,7 @@ This generates a prompt that instructs the agent to:
 2. Identify the most important files (entry points, core modules, utilities)
 3. Add descriptive comments at the top of each file
 4. Mark entry points as such
-5. Set up the `@agentmap/opencode` plugin in `~/.config/opencode/config.json`
+5. Set up the `@agentmap/opencode` plugin in `opencode.json`
 
 These comments make your files discoverable in the agentmap. The plugin automatically injects the map into future sessions.
 
@@ -61,24 +118,6 @@ npx agentmap --ignore "dist/**" --ignore "**/test/**"
 ```bash
 # Generate a prompt to help AI agents add file descriptions
 npx agentmap prompt
-```
-
-**Library Usage**
-
-```typescript
-import { generateMap, generateMapYaml } from 'agentmap'
-
-// Get as object
-const map = await generateMap({ dir: './src' })
-
-// Get as YAML string
-const yaml = await generateMapYaml({ dir: './src' })
-
-// With ignore patterns
-const yaml = await generateMapYaml({
-  dir: './src',
-  ignore: ['**/test/**', '**/*.spec.ts']
-})
 ```
 
 **File Detection**
@@ -140,36 +179,6 @@ func Helper() { ... }
 
 Descriptions are limited to the first 20 lines of the header comment.
 
-**Output Format**
-
-```yaml
-my-project:
-  src:
-    main.py:
-      desc: |
-        CLI entrypoint.
-        Parses args, wires deps, calls into lib/.
-      defs:
-        main: 12
-        parse_args: 34
-        App: 58
-  lib:
-    parse.py:
-      desc: |
-        Parsing + normalization utilities.
-      defs:
-        parse_input: 10
-        ASTNode: 41
-```
-
-**Format Rules**
-
-- Directories are YAML mappings
-- Files have optional `desc` (description) and `defs` (definitions)
-- `desc` uses YAML literal block scalar (`|`) for multi-line text
-- `defs` maps symbol names to 1-based line numbers
-- Only top-level `function` and `class` definitions are included
-
 **Supported Languages**
 
 | Language   | Extensions                |
@@ -179,53 +188,26 @@ my-project:
 | Python     | .py .pyi                  |
 | Rust       | .rs                       |
 | Go         | .go                       |
+| Zig        | .zig                      |
+| C/C++      | .c .h .cpp .hpp .cc .cxx  |
 
-**OpenCode Plugin**
+**Library Usage**
 
-agentmap includes a plugin for [OpenCode](https://opencode.ai) that automatically injects the codebase map into the system prompt at session start.
+```typescript
+import { generateMap, generateMapYaml } from 'agentmap'
 
-Add the plugin to your `opencode.json`:
+// Get as object
+const map = await generateMap({ dir: './src' })
 
-```json
-{
-  "plugin": ["@agentmap/opencode"]
-}
+// Get as YAML string
+const yaml = await generateMapYaml({ dir: './src' })
+
+// With ignore patterns
+const yaml = await generateMapYaml({
+  dir: './src',
+  ignore: ['**/test/**', '**/*.spec.ts']
+})
 ```
-
-The plugin will scan your project for files with header comments and inject the map into the system prompt wrapped in `<agentmap>` tags:
-
-```xml
-<agentmap>
-These are some of the files in the repo with their descriptions and definition locations:
-
-my-project:
-  src:
-    main.ts:
-      desc: CLI entrypoint.
-      defs:
-        main: 12
-</agentmap>
-```
-
-This gives the AI agent immediate context about your codebase structure without needing to explore files first.
-
-**Manual Setup (Any Agent)**
-
-If you're not using OpenCode, you can still use agentmap by adding instructions to your agent's instruction file (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, etc.):
-
-```markdown
-## Codebase Structure
-
-At the start of each session, run `npx -y agentmap@latest` to see a structured overview of the codebase at this point in time, with file descriptions and definition locations.
-
-When creating new files, add a brief description comment at the top explaining the file's purpose. This makes the file discoverable in the agentmap.
-
-When making significant changes to a file's purpose or responsibilities, update its header comment to reflect the changes.
-
-You can run agentmap again anytime to see the current state of the codebase as it evolves during the session.
-```
-
-This gives the agent the same workflow as the OpenCode plugin - checking codebase structure at session start and keeping file descriptions up to date.
 
 **License**
 
